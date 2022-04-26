@@ -1,11 +1,12 @@
 import cv2
+import numpy as np
 
-def initial_preprocess(image):
+def preprocess(image):
     # Convert the image to greyscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Apply Gaussian Blur
-    gaussian_blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    gaussian_blur = cv2.GaussianBlur(gray, (9, 9), 0)
 
     # Apply adaptive thresholding
     thresholding = cv2.adaptiveThreshold(gaussian_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
@@ -13,19 +14,23 @@ def initial_preprocess(image):
     # Invert the image
     inverted_image = cv2.bitwise_not(thresholding)
 
-    return inverted_image
+    # Get a rectangular kernel
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
-def board_preprocess(image):
-    # Convert the image to greyscale
-    gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    # Morph to remove noise (like the random dots)
+    morphology = cv2.morphologyEx(inverted_image, cv2.MORPH_OPEN, kernel)
 
-    # Apply Gaussian Blur
-    gaussian_blur = cv2.GaussianBlur(gray, (5, 5), 0)
+    # Dilate the image
+    dilated_image = cv2.dilate(morphology, kernel, iterations=1)
 
-    # Apply adaptive thresholding
-    thresholding = cv2.adaptiveThreshold(gaussian_blur, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
+    return dilated_image
 
-    # Invert the image
-    inverted_image = cv2.bitwise_not(thresholding)
+# Dilate the grid to make it larger
+def dilate_grid(grid):
+    # Get a rectangular kernel
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2))
 
-    return inverted_image
+    # Dilate the image
+    dilated_image = cv2.dilate(grid, kernel, iterations=1)
+
+    return dilated_image
