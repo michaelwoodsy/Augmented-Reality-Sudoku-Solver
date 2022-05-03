@@ -67,7 +67,7 @@ def get_lines(image, axis):
 # Retrieved from https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_houghlines/py_houghlines.html
 def hough_line_transform(grid):
     # If rho is any larger some lines come out angled, which is not what we want.
-    hough_lines = cv2.HoughLines(grid, 0.3, np.pi / 90, 200)
+    hough_lines = cv2.HoughLines(grid, 0.3, np.pi / 90, 150)
     
     # Removes axes of length 1
     hough_lines = np.squeeze(hough_lines)
@@ -84,7 +84,7 @@ def hough_line_transform(grid):
         y2 = int(y0 - 1000 * a)
 
         # Draws a line of thickness four and colour white on the image
-        cv2.line(grid, (x1, y1), (x2, y2), (255, 255, 255), 4) 
+        cv2.line(grid, (x1, y1), (x2, y2), (255, 255, 255), 3) 
 
     # We need to invert grid so we can add the grid and preprocessed warp image together
     # Doing so removes the grid lines (so we only have the numbers)
@@ -94,12 +94,37 @@ def hough_line_transform(grid):
 # Splits sudoku grid into 81 evenly sized boxes
 def split_image_boxes(number_image):
     boxes = list()
-    # Splits image into 9 evenly sized rows
-    rows = np.hsplit(number_image, 9)
-    for row in rows:
-        # Splits row into 9 evenly sized columns (9 boxes)
-        columns = np.vsplit(row, 9)
-        for col in columns:
+    # Splits image into 9 evenly sized columns
+    cols = np.vsplit(number_image, 9)
+    for col in cols:
+        # Splits column into 9 evenly sized rows (9 boxes)
+        rows = np.hsplit(col, 9)
+        for row in rows:
             # Add each box to the list of boxes
-            boxes.append(col)
+            boxes.append(row)
     return boxes
+
+def resize_number_images(images, dimension):
+    new_images = list()
+    for image in images:
+        image = cv2.resize(image, (dimension, dimension))
+        image = np.reshape(image, (1, dimension, dimension, 1))
+        new_images.append(image)
+    return new_images
+
+def get_sudoku(images, model):
+    sudoku = list()
+    for j in range(0, len(images), 9):
+        sudoku_row = list()
+        start = j
+        stop = j + 9
+        for i in range(start, stop):
+            prediction = model.predict(images[i])
+            max_prediction = np.max(prediction)
+            prediction_value = np.argmax(prediction)
+            if max_prediction > 0.8:
+                sudoku_row.append(prediction_value)
+            else:
+                sudoku_row.append(0)
+        sudoku.append(sudoku_row)
+    return sudoku
