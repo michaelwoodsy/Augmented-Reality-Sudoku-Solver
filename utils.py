@@ -1,5 +1,14 @@
 import cv2
 import numpy as np
+import tensorflow as tf
+
+def initialise_model():
+    json_file = open('./model/model.json', 'r')
+    loaded_model_json = json_file.read()
+    json_file.close()
+    model = tf.keras.models.model_from_json(loaded_model_json)
+    model.load_weights("./model/weights.h5")
+    return model
 
 # We are assuming that the largest contour of the image is the sudoku board's border
 def largest_contour(contours):
@@ -104,27 +113,102 @@ def split_image_boxes(number_image):
             boxes.append(row)
     return boxes
 
+# Cleans the images (ie makes boxes with no numbers completely black and centers boxes with numbers)
+def clean_number_images(images):
+    clean_boxes = list()
+    for image in images:
+        height, width = image.shape
+        mid = width // 2
+        if number_image_check(image, height, width, mid):
+            clean_boxes.append(np.zeros_like(image)) # Adds a black box if its not a number
+        else:
+            # Center the number in the box
+            contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = sorted(contours, key=cv2.contourArea, reverse=True)
+            x, y, w, h = cv2.boundingRect(contours[0])
+
+            start_x = (width - w) // 2
+            start_y = (height - h) // 2
+            
+            # Removes all noise from the box (leaving just the number)
+            new_image = np.zeros_like(image)
+            new_image[start_y:start_y + h, start_x:start_x + w] = image[y:y + h, x:x + w]
+
+            clean_boxes.append(new_image)
+
+    return clean_boxes
+
+# Checks where the box contains a number or not
+def number_image_check(image, height, width, mid):
+    # Checks that the majority of the image is black
+    if np.isclose(image, 0).sum() / (image.shape[0] * image.shape[1]) >= 0.95:
+        return True
+    # Checks that the majority of the center of the image is black
+    elif np.isclose(image[:, int(mid - width * 0.4):int(mid + width * 0.4)], 0).sum() / (2 * width * 0.4 * height) >= 0.925:
+        return True
+    # If it reaches here then we know that the box must contain a number
+    else:
+        return False
+
+# Resizes the image so that they are the correct shape for the CNN
 def resize_number_images(images, dimension):
     new_images = list()
     for image in images:
+        # Image is resized
         image = cv2.resize(image, (dimension, dimension))
+
+        # Image is reshaped so it can be passed into CNN
         image = np.reshape(image, (1, dimension, dimension, 1))
         new_images.append(image)
     return new_images
 
+# Gets all the numbers for the sudoky puzzle
 def get_sudoku(images, model):
     sudoku = list()
+    # Appends nine lists of nine numbers to the sudoku list
     for j in range(0, len(images), 9):
         sudoku_row = list()
         start = j
         stop = j + 9
         for i in range(start, stop):
-            prediction = model.predict(images[i])
-            max_prediction = np.max(prediction)
+            prediction = model.predict(images[i]) # Predicts what the digit is using the CNN
             prediction_value = np.argmax(prediction)
-            if max_prediction > 0.8:
-                sudoku_row.append(prediction_value)
-            else:
-                sudoku_row.append(0)
+            sudoku_row.append(prediction_value)
         sudoku.append(sudoku_row)
     return sudoku
+
+# Overlay the solution found on the warped image
+def overlay_solution(image, solved_puzzle, initial_puzzle, dimension, text_colour):
+    for y in range(len(solved_puzzle)):
+        for x in range(len(solved_puzzle[y])):
+            # Check to make sure the number wasn't already on the sudoku board
+            if initial_puzzle[y][x] == 0:
+                number = str(solved_puzzle[y][x])
+
+                # Retrieves the corners and center of the box
+                top_left = (x * dimension, y * dimension)   
+                bottom_right = ((x + 1) * dimension, (y + 1) * dimension)
+                center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
+
+                # Calculates the size and position of there the number will go in the box
+                text_size, _ = cv2.getTextSize(number, cv2.FONT_HERSHEY_SIMPLEX, 0.75, 4)
+                text_position = (center[0] - text_size[0] // 2, center[1] + text_size[1] // 2)
+
+                # Adds number to the right box on the board
+                cv2.putText(image, number, text_position, cv2.FONT_HERSHEY_COMPLEX_SMALL, 2, text_colour, 2)
+    return image
+
+
+def unwarp_image(overlay_solution, original_image, corners, overlay_width, overlay_height, original_width, original_height):
+    # Input and output points are now in right order (in an anti-clockwise direction)
+    input_points = np.float32(corners)
+    output_points = np.float32([[0, 0],[overlay_width - 1, 0], [0, overlay_height - 1],[overlay_width - 1, overlay_height - 1]])
+
+    # Applies the inverse transformation
+    transformation_matrix = cv2.getPerspectiveTransform(input_points, output_points)
+    unwarped = cv2.warpPerspective(overlay_solution, transformation_matrix, (original_height, original_width), flags=cv2.WARP_INVERSE_MAP)
+    
+    # Combines the original and unwarped image to get the final result
+    final_result = np.where(unwarped.sum(axis = -1, keepdims = True) != 0, unwarped, original_image)
+
+    return final_result

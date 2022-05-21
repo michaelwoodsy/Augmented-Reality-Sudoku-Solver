@@ -1,25 +1,30 @@
 import cv2
-import numpy as np
-import tensorflow as tf
+import copy
 
 from preprocessing import *
 from utils import *
+from sudoku import *
 
 cv2.namedWindow('Sudoku Solver')
 
 # Open sudoku image file
-image = cv2.imread('sudoku_noise.jpeg')
+image = cv2.imread("./test_images/sudoku_test.jpeg")
+
+# Retrieve the original dimensions of the image
+original_image_width, original_image_height = image.shape[0], image.shape[1]
 
 # Initialize image width and height (will make perspective transformation easier later on)
 # Dimensions a multiple of 9 so that the image can be split into 81 evenly sized boxes later on
-image_width = 450
-image_height = 450
+image_width, image_height = 576, 576
 
 # Initialise dimension of images in CNN (in current one they are 28x28 pixels)
-model_dimension = 28
+model_dimension = 64
+
+# Initialise colour of text of solution
+number_colour = (0, 0, 255) # Red
 
 # Initialise the CNN model for digit classification
-#model = tf.keras.models.load_model('digit_classification.h5')
+model = initialise_model()
 
 # Preprocess the image
 preprocessed_image = preprocess(image)
@@ -89,12 +94,27 @@ number_image_boxes = numbers_only_image.copy()
 # Divide image with only numbers into 81 evenly sized boxes
 number_image_boxes = split_image_boxes(number_image_boxes)
 
+# Cleans all the image boxes (ie removes boxes which don't have numbers)
+cleaned_number_images = clean_number_images(number_image_boxes)
+
 # Resize the boxes for their predictions
-resized_number_images = resize_number_images(number_image_boxes, model_dimension)
+resized_number_images = resize_number_images(cleaned_number_images, model_dimension)
 
 # Predict a number as a test
-#sudoku = get_sudoku(resized_number_images, model)
+sudoku = get_sudoku(resized_number_images, model)
 
-cv2.imshow('Sudoku Solver', numbers_only_image)
+# Make a copy of the initial sudoku for when overlaying the solution
+initial_sudoku = copy.deepcopy(sudoku)
+
+# Solve the sudoku
+solved_sudoku = solve_sudoku(sudoku)
+
+# Overlay the solution to the sudoku on the warped image
+overlayed_warped_image = overlay_solution(warped_image, solved_sudoku, initial_sudoku, model_dimension, number_colour)
+
+# Unwarp the solution onto the original image
+final_solution = unwarp_image(overlayed_warped_image, image, organised_corners, image_width, image_height, original_image_width, original_image_height)
+
+cv2.imshow('Sudoku Solver', final_solution)
 
 cv2.waitKey(0)
