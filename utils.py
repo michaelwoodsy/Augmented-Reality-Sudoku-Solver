@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
+
 def initialise_model():
     json_file = open('./model/model.json', 'r')
     loaded_model_json = json_file.read()
@@ -10,9 +11,10 @@ def initialise_model():
     model.load_weights("./model/weights.h5")
     return model
 
+
 # We are assuming that the largest contour of the image is the sudoku board's border
 def largest_contour(contours):
-    largest_contour = None
+    large_contour = None
     max_area = 1000
 
     for contour in contours:
@@ -20,14 +22,14 @@ def largest_contour(contours):
         contour_perimeter = cv2.arcLength(contour, closed=True)
         approximate_polygon = cv2.approxPolyDP(contour, 0.02 * contour_perimeter, closed=True)
         if len(approximate_polygon) == 4 and contour_area > max_area:
-            largest_contour = approximate_polygon
+            large_contour = approximate_polygon
             max_area = contour_area
 
-    if largest_contour is not None:
-    
-        largest_contour = organise_corners(largest_contour)
+    if large_contour is not None:
+        large_contour = organise_corners(large_contour)
 
-    return largest_contour
+    return large_contour
+
 
 # Organise the corners anti-clockwise for perspective transformation
 def organise_corners(sudoku_contour):
@@ -38,51 +40,55 @@ def organise_corners(sudoku_contour):
 
     add = sudoku_contour.sum(1)
     # Bottom Left
-    organised_corners[0] = sudoku_contour[np.argmin(add)] # Has smallest (x + y) value
+    organised_corners[0] = sudoku_contour[np.argmin(add)]  # Has smallest (x + y) value
     # Top Right
-    organised_corners[3] =sudoku_contour[np.argmax(add)] # Has largest (x + y) value
+    organised_corners[3] = sudoku_contour[np.argmax(add)]  # Has largest (x + y) value
 
     diff = np.diff(sudoku_contour, axis=1)
     # Top Left
-    organised_corners[1] =sudoku_contour[np.argmin(diff)] # Has smallest (x - y) value
+    organised_corners[1] = sudoku_contour[np.argmin(diff)]  # Has smallest (x - y) value
     # Bottom Right
-    organised_corners[2] = sudoku_contour[np.argmax(diff)] # Has smallest (x - y) value
+    organised_corners[2] = sudoku_contour[np.argmax(diff)]  # Has smallest (x - y) value
 
     return organised_corners
+
 
 # Apply perspective transformation so only the sudoku board is displayed on the image
 def warp_image(image, organised_corners, image_width, image_height):
     # Input and output points are now in right order (in an anti-clockwise direction)
     input_points = np.float32(organised_corners)
-    output_points = np.float32([[0, 0],[image_width - 1, 0], [0, image_height - 1],[image_width - 1, image_height - 1]])
+    output_points = np.float32(
+        [[0, 0], [image_width - 1, 0], [0, image_height - 1], [image_width - 1, image_height - 1]])
 
     transformation_matrix = cv2.getPerspectiveTransform(input_points, output_points)
     output_image = cv2.warpPerspective(image, transformation_matrix, (image_width, image_height))
     return output_image
 
+
 # axis=0 for vertical axis, axis=1 for horizontal axis
 def get_lines(image, axis):
     # Specify size on vertical/horizontal axis
     rows = image.shape[axis]
-    linesize = rows // 10 # 10 horizontal and vertical lines on a sudoku grid (includes border)
-    
+    line_size = rows // 10  # 10 horizontal and vertical lines on a sudoku grid (includes border)
+
     # Create structure element for extracting vertical/horizontal lines through morphology operations
     if axis == 0:
-        lineStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (1, linesize))
+        line_structure = cv2.getStructuringElement(cv2.MORPH_RECT, (1, line_size))
     else:
-        lineStructure = cv2.getStructuringElement(cv2.MORPH_RECT, (linesize, 1))
-    
+        line_structure = cv2.getStructuringElement(cv2.MORPH_RECT, (line_size, 1))
+
     # Apply morphology operations
-    image = cv2.erode(image, lineStructure)
-    image = cv2.dilate(image, lineStructure)
+    image = cv2.erode(image, line_structure)
+    image = cv2.dilate(image, line_structure)
     return image
 
-# Retrieved from https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_houghlines/py_houghlines.html
+
+# https://opencv24-python-tutorials.readthedocs.io/en/latest/py_tutorials/py_imgproc/py_houghlines/py_houghlines.html
 def hough_line_transform(grid):
     # If rho is any larger some lines come out angled, which is not what we want.
     hough_lines = cv2.HoughLines(grid, 0.3, np.pi / 90, 150)
-    
-    # Removes axes of length 1
+
+    # Remove axes of length 1
     hough_lines = np.squeeze(hough_lines)
 
     if len(hough_lines.shape) < 2:
@@ -103,12 +109,13 @@ def hough_line_transform(grid):
             y2 = int(y0 - 1000 * a)
 
             # Draws a line of thickness four and colour white on the image
-            cv2.line(grid, (x1, y1), (x2, y2), (255, 255, 255), 3) 
+            cv2.line(grid, (x1, y1), (x2, y2), (255, 255, 255), 3)
 
-        # We need to invert grid so we can add the grid and preprocessed warp image together
+            # We need to invert grid, so we can add the grid and preprocessed warp image together
         # Doing so removes the grid lines (so we only have the numbers)
         inverted_grid = cv2.bitwise_not(grid)
         return inverted_grid
+
 
 # Splits sudoku grid into 81 evenly sized boxes
 def split_image_boxes(number_image):
@@ -123,6 +130,7 @@ def split_image_boxes(number_image):
             boxes.append(row)
     return boxes
 
+
 # Cleans the images (ie makes boxes with no numbers completely black and centers boxes with numbers)
 def clean_number_images(images):
     clean_boxes = list()
@@ -130,7 +138,7 @@ def clean_number_images(images):
         height, width = image.shape
         mid = width // 2
         if number_image_check(image, height, width, mid):
-            clean_boxes.append(False) # Sets it to False if not a number
+            clean_boxes.append(False)  # Sets it to False if not a number
         else:
             # Center the number in the box
             contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -139,7 +147,7 @@ def clean_number_images(images):
 
             start_x = (width - w) // 2
             start_y = (height - h) // 2
-            
+
             # Removes all noise from the box (leaving just the number)
             new_image = np.zeros_like(image)
             new_image[start_y:start_y + h, start_x:start_x + w] = image[y:y + h, x:x + w]
@@ -148,6 +156,7 @@ def clean_number_images(images):
 
     return clean_boxes
 
+
 def get_num_clues(images):
     counter = 0
     for image in images:
@@ -155,17 +164,20 @@ def get_num_clues(images):
             counter += 1
     return counter
 
+
 # Checks where the box contains a number or not
 def number_image_check(image, height, width, mid):
     # Checks that the majority of the image is black
     if np.isclose(image, 0).sum() / (image.shape[0] * image.shape[1]) >= 0.95:
         return True
     # Checks that the majority of the center of the image is black
-    elif np.isclose(image[:, int(mid - width * 0.4):int(mid + width * 0.4)], 0).sum() / (2 * width * 0.4 * height) >= 0.925:
+    elif np.isclose(image[:, int(mid - width * 0.4):int(mid + width * 0.4)], 0).sum() / (
+            2 * width * 0.4 * height) >= 0.925:
         return True
     # If it reaches here then we know that the box must contain a number
     else:
         return False
+
 
 # Resizes the image so that they are the correct shape for the CNN
 def resize_number_images(images, dimension):
@@ -182,7 +194,8 @@ def resize_number_images(images, dimension):
             new_images.append(False)
     return new_images
 
-# Gets all the numbers for the sudoky puzzle
+
+# Gets all the numbers for the sudoku puzzle
 def get_sudoku(images, model):
     sudoku = list()
     # Appends nine lists of nine numbers to the sudoku list
@@ -192,13 +205,14 @@ def get_sudoku(images, model):
         stop = j + 9
         for i in range(start, stop):
             if type(images[i]) is not bool:
-                prediction = model.predict(images[i]) # Predicts what the digit is using the CNN
+                prediction = model.predict(images[i])  # Predicts what the digit is using the CNN
                 prediction_value = np.argmax(prediction)
                 sudoku_row.append(prediction_value + 1)
             else:
                 sudoku_row.append(0)
         sudoku.append(sudoku_row)
     return sudoku
+
 
 # Overlay the solution found on the warped image
 def overlay_solution(image, solved_puzzle, initial_puzzle, dimension, text_colour):
@@ -209,7 +223,7 @@ def overlay_solution(image, solved_puzzle, initial_puzzle, dimension, text_colou
                 number = str(solved_puzzle[y][x])
 
                 # Retrieves the corners and center of the box
-                top_left = (x * dimension, y * dimension)   
+                top_left = (x * dimension, y * dimension)
                 bottom_right = ((x + 1) * dimension, (y + 1) * dimension)
                 center = ((top_left[0] + bottom_right[0]) // 2, (top_left[1] + bottom_right[1]) // 2)
 
@@ -222,16 +236,19 @@ def overlay_solution(image, solved_puzzle, initial_puzzle, dimension, text_colou
     return image
 
 
-def unwarp_image(overlay_solution, original_image, corners, overlay_width, overlay_height, original_width, original_height):
+def unwarp_image(sudoku_solution_image, original_image, corners, overlay_width, overlay_height, original_width,
+                 original_height):
     # Input and output points are now in right order (in an anti-clockwise direction)
     input_points = np.float32(corners)
-    output_points = np.float32([[0, 0],[overlay_width - 1, 0], [0, overlay_height - 1],[overlay_width - 1, overlay_height - 1]])
+    output_points = np.float32(
+        [[0, 0], [overlay_width - 1, 0], [0, overlay_height - 1], [overlay_width - 1, overlay_height - 1]])
 
     # Applies the inverse transformation
     transformation_matrix = cv2.getPerspectiveTransform(input_points, output_points)
-    unwarped = cv2.warpPerspective(overlay_solution, transformation_matrix, (original_height, original_width), flags=cv2.WARP_INVERSE_MAP)
-    
+    unwarped = cv2.warpPerspective(sudoku_solution_image, transformation_matrix, (original_height, original_width),
+                                   flags=cv2.WARP_INVERSE_MAP)
+
     # Combines the original and unwarped image to get the final result
-    final_result = np.where(unwarped.sum(axis = -1, keepdims = True) != 0, unwarped, original_image)
+    final_result = np.where(unwarped.sum(axis=-1, keepdims=True) != 0, unwarped, original_image)
 
     return final_result

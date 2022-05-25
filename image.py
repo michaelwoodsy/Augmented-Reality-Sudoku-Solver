@@ -1,10 +1,8 @@
-import cv2
-
 from main import *
 
 cv2.namedWindow('Sudoku Solver')
 
-initial_image = cv2.imread("./test_images/image_1.jpg")
+initial_image = cv2.imread("test_images/img_1.jpg")
 
 solution = ar_sudoku_solver(initial_image)
 

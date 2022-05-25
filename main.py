@@ -1,10 +1,12 @@
-import cv2
 import copy
-# import time
 
 from preprocessing import *
-from utils import *
 from sudoku import *
+from utils import *
+
+
+# import time
+
 
 def ar_sudoku_solver(image):
     # Initialise timer
@@ -21,7 +23,7 @@ def ar_sudoku_solver(image):
     model_dimension = 64
 
     # Initialise colour of text of solution
-    number_colour = (0, 0, 255) # Red
+    number_colour = (0, 0, 255)  # Red
 
     # Initialise the CNN model for digit classification
     model = initialise_model()
@@ -86,13 +88,13 @@ def ar_sudoku_solver(image):
         complete_grid = hough_line_transform(complete_grid)
 
         if complete_grid is not None:
-            # Create a copy of of preprocessed warped image so that we can add it to the complete_grid
+            # Create a copy of preprocessed warped image so that we can add it to the complete_grid
             numbers_only_image = warp_preprocessed_image.copy()
 
             # Apply bitwise and on numbers_only_image and complete_grid to only get the numbers
             numbers_only_image = cv2.bitwise_and(numbers_only_image, complete_grid)
 
-            # Create copy of numbers_only_image, which will be split into 81 evenly sized images (number of boxes in a sudoku)
+            # Create copy of numbers_only_image, which will be split into 81 evenly sized images
             number_image_boxes = numbers_only_image.copy()
 
             # Divide image with only numbers into 81 evenly sized boxes
@@ -124,22 +126,24 @@ def ar_sudoku_solver(image):
 
                 if type(solved_sudoku) is not bool:
 
-                    # Record total time takenq
+                    # Record total time taken
                     # solve_time = time.time()
                     # print("Time taken to solve sudoku is {} seconds".format(solve_time - sudoku_time))
 
                     # Overlay the solution to the sudoku on the warped image
-                    overlayed_warped_image = overlay_solution(warped_image, solved_sudoku, initial_sudoku, model_dimension, number_colour)
+                    overlay_warped_image = overlay_solution(warped_image, solved_sudoku, initial_sudoku,
+                                                            model_dimension, number_colour)
 
-                    # Unwarp the solution onto the original image
-                    final_solution = unwarp_image(overlayed_warped_image, image, sudoku_contour, image_width, image_height, original_image_width, original_image_height)
+                    # Un-warp the solution onto the original image
+                    final_solution = unwarp_image(overlay_warped_image, image, sudoku_contour, image_width,
+                                                  image_height, original_image_width, original_image_height)
 
                     # Record total time taken
                     # total_time = time.time()
-                    # print("Time taken to detect, solve and overlay sudoku is {} seconds".format(total_time - start_time))
+                    # print("Time taken to finish running is {} seconds".format(total_time - start_time))
 
                     return final_solution
-                
+
                 else:
                     return None
 

@@ -1,4 +1,3 @@
-import cv2
 import time
 
 from main import *
@@ -15,7 +14,7 @@ while True:
     if time_elapsed > 1. / frame_rate:
         previous_time = time.time()
 
-        solved_solution =  ar_sudoku_solver(initial_image)
+        solved_solution = ar_sudoku_solver(initial_image)
 
         if solved_solution is not None:
             cv2.imshow('frame', solved_solution)

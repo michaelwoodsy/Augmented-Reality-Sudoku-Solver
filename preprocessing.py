@@ -1,5 +1,5 @@
 import cv2
-import numpy as np
+
 
 def preprocess(image):
     # Convert the image to grayscale
@@ -24,6 +24,7 @@ def preprocess(image):
     dilated_image = cv2.dilate(morphology, kernel, iterations=1)
 
     return dilated_image
+
 
 # Dilate the grid to make it larger
 def dilate_grid(grid):

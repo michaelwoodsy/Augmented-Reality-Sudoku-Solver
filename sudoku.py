@@ -23,22 +23,24 @@ def valid_number(board, row, col, num):
     # Returns True if there are no duplicate numbers
     return True
 
+
 # Backtracking algorithm for solving the sudoku
 # Returns True if there is a valid solution, False otherwise
 def check_solution(board):
     for i in range(9):
         for j in range(9):
             if board[i][j] == 0:
-                for num in range(1,10):
+                for num in range(1, 10):
                     if valid_number(board, i, j, num):
                         board[i][j] = num
-                        result = check_solution(board) # Recursive process
-                        if result == True:
+                        result = check_solution(board)  # Recursive process
+                        if result:
                             return True
                         else:
                             board[i][j] = 0
                 return False
     return True
+
 
 # Calls the backtracking algorithm to find the solution
 # Returns the solution if there is one, False otherwise
