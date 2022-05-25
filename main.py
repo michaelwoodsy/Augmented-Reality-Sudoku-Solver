@@ -32,7 +32,7 @@ def ar_sudoku_solver(image):
     preprocessed_image = preprocess(image)
 
     # Make a copy of the image to draw the contours on
-    contour_image = image.copy()
+    contour_image = copy.deepcopy(image)
 
     # Find all the contours on the preprocessed image
     contours, _ = cv2.findContours(preprocessed_image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -46,13 +46,13 @@ def ar_sudoku_solver(image):
     if sudoku_contour is not None:
 
         # Make a copy of the image to draw the largest_contour on
-        sudoku_corner_image = image.copy()
+        sudoku_corner_image = copy.deepcopy(image)
 
         # Draw the largest contour on largest_contour_image
         cv2.drawContours(sudoku_corner_image, sudoku_contour, -1, (0, 0, 255), 5)
 
         # Make a copy of the image to perform perspective transformation
-        warped_image = image.copy()
+        warped_image = copy.deepcopy(image)
 
         # Warp the image to the sudoku grid
         warped_image = warp_image(warped_image, sudoku_contour, image_width, image_height)
@@ -62,14 +62,13 @@ def ar_sudoku_solver(image):
         # print("Time taken to detect the grid is {} seconds".format(warp_time - start_time))
 
         # Make a copy of the image to perform preprocessing on warped image
-        warp_preprocessed_image = warped_image.copy()
+        warp_preprocessed_image = copy.deepcopy(warped_image)
 
         # Apply preprocessing to warped grid
         warp_preprocessed_image = preprocess(warp_preprocessed_image)
 
         # Make two copies of the image to get the horizontal and vertical lines
-        horizontal_lines = warp_preprocessed_image.copy()
-        vertical_lines = warp_preprocessed_image.copy()
+        horizontal_lines, vertical_lines = copy.deepcopy(warp_preprocessed_image), copy.deepcopy(warp_preprocessed_image)
 
         # Get the horizontal and vertical lines
         horizontal_lines = get_lines(horizontal_lines, axis=1)
@@ -82,20 +81,20 @@ def ar_sudoku_solver(image):
         preprocess_grid_lines = dilate_grid(grid_image)
 
         # Make a copy of the preprocessed grid so that we can apply Hough Line transformations on it
-        complete_grid = preprocess_grid_lines.copy()
+        complete_grid = copy.deepcopy(preprocess_grid_lines)
 
         # Apply Hough Line transformations on preprocessed grid
         complete_grid = hough_line_transform(complete_grid)
 
         if complete_grid is not None:
             # Create a copy of preprocessed warped image so that we can add it to the complete_grid
-            numbers_only_image = warp_preprocessed_image.copy()
+            numbers_only_image = copy.deepcopy(warp_preprocessed_image)
 
             # Apply bitwise and on numbers_only_image and complete_grid to only get the numbers
             numbers_only_image = cv2.bitwise_and(numbers_only_image, complete_grid)
 
             # Create copy of numbers_only_image, which will be split into 81 evenly sized images
-            number_image_boxes = numbers_only_image.copy()
+            number_image_boxes = copy.deepcopy(numbers_only_image)
 
             # Divide image with only numbers into 81 evenly sized boxes
             number_image_boxes = split_image_boxes(number_image_boxes)
