@@ -13,7 +13,7 @@ def initialise_model():
 # We are assuming that the largest contour of the image is the sudoku board's border
 def largest_contour(contours):
     largest_contour = None
-    max_area = 0
+    max_area = 1000
 
     for contour in contours:
         contour_area = cv2.contourArea(contour)
@@ -22,6 +22,10 @@ def largest_contour(contours):
         if len(approximate_polygon) == 4 and contour_area > max_area:
             largest_contour = approximate_polygon
             max_area = contour_area
+
+    if largest_contour is not None:
+    
+        largest_contour = organise_corners(largest_contour)
 
     return largest_contour
 
@@ -81,8 +85,8 @@ def hough_line_transform(grid):
     # Removes axes of length 1
     hough_lines = np.squeeze(hough_lines)
 
-    if len(hough_lines.shape) == 0:
-        
+    if len(hough_lines.shape) < 2:
+
         return None
 
     else:

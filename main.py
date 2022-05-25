@@ -49,14 +49,11 @@ def ar_sudoku_solver(image):
         # Draw the largest contour on largest_contour_image
         cv2.drawContours(sudoku_corner_image, sudoku_contour, -1, (0, 0, 255), 5)
 
-        # Organise the corners
-        organised_corners = organise_corners(sudoku_contour)
-
         # Make a copy of the image to perform perspective transformation
         warped_image = image.copy()
 
         # Warp the image to the sudoku grid
-        warped_image = warp_image(warped_image, organised_corners, image_width, image_height)
+        warped_image = warp_image(warped_image, sudoku_contour, image_width, image_height)
 
         # Record time taken to warp the image
         # warp_time = time.time()
@@ -130,7 +127,7 @@ def ar_sudoku_solver(image):
                 overlayed_warped_image = overlay_solution(warped_image, solved_sudoku, initial_sudoku, model_dimension, number_colour)
 
                 # Unwarp the solution onto the original image
-                final_solution = unwarp_image(overlayed_warped_image, image, organised_corners, image_width, image_height, original_image_width, original_image_height)
+                final_solution = unwarp_image(overlayed_warped_image, image, sudoku_contour, image_width, image_height, original_image_width, original_image_height)
 
                 # Record total time taken
                 # total_time = time.time()
