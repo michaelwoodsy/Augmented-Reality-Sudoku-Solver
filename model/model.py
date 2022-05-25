@@ -3,7 +3,7 @@ import tensorflow as tf
 batch_size = 16
 nb_epochs = 5 # number of iterations to run
 
-num_classes = 10 # 10 classes because we include zero
+num_classes = 9 # 9 classes because we don't include
 input_shape = (64, 64, 1) # 64 because images are 64 x 64 pixels
 
 # Our CNN Model

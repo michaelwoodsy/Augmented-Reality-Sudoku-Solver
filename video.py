@@ -5,7 +5,7 @@ from main import *
 
 cap = cv2.VideoCapture(0)
 
-frame_rate = 10
+frame_rate = 30
 previous_time = 0
 
 while True:

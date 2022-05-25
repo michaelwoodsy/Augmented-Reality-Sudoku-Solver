@@ -130,7 +130,7 @@ def clean_number_images(images):
         height, width = image.shape
         mid = width // 2
         if number_image_check(image, height, width, mid):
-            clean_boxes.append(np.zeros_like(image)) # Adds a black box if its not a number
+            clean_boxes.append(False) # Sets it to False if not a number
         else:
             # Center the number in the box
             contours, _ = cv2.findContours(image, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -148,6 +148,13 @@ def clean_number_images(images):
 
     return clean_boxes
 
+def get_num_clues(images):
+    counter = 0
+    for image in images:
+        if type(image) is not bool:
+            counter += 1
+    return counter
+
 # Checks where the box contains a number or not
 def number_image_check(image, height, width, mid):
     # Checks that the majority of the image is black
@@ -164,12 +171,15 @@ def number_image_check(image, height, width, mid):
 def resize_number_images(images, dimension):
     new_images = list()
     for image in images:
-        # Image is resized
-        image = cv2.resize(image, (dimension, dimension))
+        if type(image) is not bool:
+            # Image is resized
+            image = cv2.resize(image, (dimension, dimension))
 
-        # Image is reshaped so it can be passed into CNN
-        image = np.reshape(image, (1, dimension, dimension, 1))
-        new_images.append(image)
+            # Image is reshaped so it can be passed into CNN
+            image = np.reshape(image, (1, dimension, dimension, 1))
+            new_images.append(image)
+        else:
+            new_images.append(False)
     return new_images
 
 # Gets all the numbers for the sudoky puzzle
@@ -181,9 +191,12 @@ def get_sudoku(images, model):
         start = j
         stop = j + 9
         for i in range(start, stop):
-            prediction = model.predict(images[i]) # Predicts what the digit is using the CNN
-            prediction_value = np.argmax(prediction)
-            sudoku_row.append(prediction_value)
+            if type(images[i]) is not bool:
+                prediction = model.predict(images[i]) # Predicts what the digit is using the CNN
+                prediction_value = np.argmax(prediction)
+                sudoku_row.append(prediction_value + 1)
+            else:
+                sudoku_row.append(0)
         sudoku.append(sudoku_row)
     return sudoku
 

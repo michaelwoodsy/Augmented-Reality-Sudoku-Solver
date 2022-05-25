@@ -7,6 +7,8 @@ from utils import *
 from sudoku import *
 
 def ar_sudoku_solver(image):
+    initial_image = copy.deepcopy(image)
+
     # Initialise timer
     # start_time = time.time()
 
@@ -101,40 +103,48 @@ def ar_sudoku_solver(image):
             # Cleans all the image boxes (ie removes boxes which don't have numbers)
             cleaned_number_images = clean_number_images(number_image_boxes)
 
-            # Resize the boxes for their predictions
-            resized_number_images = resize_number_images(cleaned_number_images, model_dimension)
+            # Get the number of clues given on the sudoku board
+            num_clues = get_num_clues(cleaned_number_images)
 
-            # Predict a number as a test
-            sudoku = get_sudoku(resized_number_images, model)
+            if num_clues >= 17:
 
-            # Record time taken to get sudoku numbers
-            # sudoku_time = time.time()
-            # print("Time taken to detect the sudoku numbers is {} seconds".format(sudoku_time - warp_time))
+                # Resize the boxes for their predictions
+                resized_number_images = resize_number_images(cleaned_number_images, model_dimension)
 
-            # Make a copy of the initial sudoku for when overlaying the solution
-            initial_sudoku = copy.deepcopy(sudoku)
+                # Predict a number as a test
+                sudoku = get_sudoku(resized_number_images, model)
 
-            # Solve the sudoku
-            solved_sudoku = solve_sudoku(sudoku)
+                # Record time taken to get sudoku numbers
+                # sudoku_time = time.time()
+                # print("Time taken to detect the sudoku numbers is {} seconds".format(sudoku_time - warp_time))
 
-            if type(solved_sudoku) is not bool:
+                # Make a copy of the initial sudoku for when overlaying the solution
+                initial_sudoku = copy.deepcopy(sudoku)
 
-                # Record total time taken
-                # solve_time = time.time()
-                # print("Time taken to solve sudoku is {} seconds".format(solve_time - sudoku_time))
+                # Solve the sudoku
+                solved_sudoku = solve_sudoku(sudoku)
 
-                # Overlay the solution to the sudoku on the warped image
-                overlayed_warped_image = overlay_solution(warped_image, solved_sudoku, initial_sudoku, model_dimension, number_colour)
+                if type(solved_sudoku) is not bool:
 
-                # Unwarp the solution onto the original image
-                final_solution = unwarp_image(overlayed_warped_image, image, sudoku_contour, image_width, image_height, original_image_width, original_image_height)
+                    # Record total time taken
+                    # solve_time = time.time()
+                    # print("Time taken to solve sudoku is {} seconds".format(solve_time - sudoku_time))
 
-                # Record total time taken
-                # total_time = time.time()
-                # print("Time taken to detect, solve and overlay sudoku is {} seconds".format(total_time - start_time))
+                    # Overlay the solution to the sudoku on the warped image
+                    overlayed_warped_image = overlay_solution(warped_image, solved_sudoku, initial_sudoku, model_dimension, number_colour)
 
-                return final_solution
-            
+                    # Unwarp the solution onto the original image
+                    final_solution = unwarp_image(overlayed_warped_image, initial_image, sudoku_contour, image_width, image_height, original_image_width, original_image_height)
+
+                    # Record total time taken
+                    # total_time = time.time()
+                    # print("Time taken to detect, solve and overlay sudoku is {} seconds".format(total_time - start_time))
+
+                    return final_solution
+                
+                else:
+                    return None
+
             else:
                 return None
         else:
