@@ -2,7 +2,7 @@ import cv2
 import numpy as np
 
 def preprocess(image):
-    # Convert the image to greyscale
+    # Convert the image to grayscale
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
     # Apply Gaussian Blur

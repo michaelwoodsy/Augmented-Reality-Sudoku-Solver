@@ -81,24 +81,30 @@ def hough_line_transform(grid):
     # Removes axes of length 1
     hough_lines = np.squeeze(hough_lines)
 
-    for rho, theta in hough_lines:
-        # find out where the line stretches to and draw them
-        a = np.cos(theta)
-        b = np.sin(theta)
-        x0 = a * rho
-        y0 = b * rho
-        x1 = int(x0 + 1000 * (-b))
-        y1 = int(y0 + 1000 * a)
-        x2 = int(x0 - 1000 * (-b))
-        y2 = int(y0 - 1000 * a)
+    if len(hough_lines.shape) == 0:
+        
+        return None
 
-        # Draws a line of thickness four and colour white on the image
-        cv2.line(grid, (x1, y1), (x2, y2), (255, 255, 255), 3) 
+    else:
 
-    # We need to invert grid so we can add the grid and preprocessed warp image together
-    # Doing so removes the grid lines (so we only have the numbers)
-    inverted_grid = cv2.bitwise_not(grid)
-    return inverted_grid
+        for rho, theta in hough_lines:
+            # find out where the line stretches to and draw them
+            a = np.cos(theta)
+            b = np.sin(theta)
+            x0 = a * rho
+            y0 = b * rho
+            x1 = int(x0 + 1000 * (-b))
+            y1 = int(y0 + 1000 * a)
+            x2 = int(x0 - 1000 * (-b))
+            y2 = int(y0 - 1000 * a)
+
+            # Draws a line of thickness four and colour white on the image
+            cv2.line(grid, (x1, y1), (x2, y2), (255, 255, 255), 3) 
+
+        # We need to invert grid so we can add the grid and preprocessed warp image together
+        # Doing so removes the grid lines (so we only have the numbers)
+        inverted_grid = cv2.bitwise_not(grid)
+        return inverted_grid
 
 # Splits sudoku grid into 81 evenly sized boxes
 def split_image_boxes(number_image):
