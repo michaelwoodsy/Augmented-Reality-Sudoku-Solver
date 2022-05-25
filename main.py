@@ -7,8 +7,6 @@ from utils import *
 from sudoku import *
 
 def ar_sudoku_solver(image):
-    initial_image = copy.deepcopy(image)
-
     # Initialise timer
     # start_time = time.time()
 
@@ -126,7 +124,7 @@ def ar_sudoku_solver(image):
 
                 if type(solved_sudoku) is not bool:
 
-                    # Record total time taken
+                    # Record total time takenq
                     # solve_time = time.time()
                     # print("Time taken to solve sudoku is {} seconds".format(solve_time - sudoku_time))
 
@@ -134,7 +132,7 @@ def ar_sudoku_solver(image):
                     overlayed_warped_image = overlay_solution(warped_image, solved_sudoku, initial_sudoku, model_dimension, number_colour)
 
                     # Unwarp the solution onto the original image
-                    final_solution = unwarp_image(overlayed_warped_image, initial_image, sudoku_contour, image_width, image_height, original_image_width, original_image_height)
+                    final_solution = unwarp_image(overlayed_warped_image, image, sudoku_contour, image_width, image_height, original_image_width, original_image_height)
 
                     # Record total time taken
                     # total_time = time.time()
