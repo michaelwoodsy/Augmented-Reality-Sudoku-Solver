@@ -5,7 +5,7 @@ and the program will generate a solution overlaying the original image.
 ## How to run the program for images
 To choose the image you would like the program to solve, change the name of the image file on the following line in image.py
 ```python
-initial_image = cv2.imread("./test_images/sudoku_test.jpeg")
+initial_image = cv2.imread("./test_images/img_3.jpg")
 ```
 
 Run the following command in the root directory:
@@ -29,5 +29,5 @@ python3 model.py
 Add the image you would like the program to solve in the test_images directory.
 Then, as mentioned above, change the name of the image file on the following line in image.py
 ```python
-initial_image = cv2.imread("./test_images/sudoku_test.jpeg")
+initial_image = cv2.imread("./test_images/img_3.jpg")
 ```

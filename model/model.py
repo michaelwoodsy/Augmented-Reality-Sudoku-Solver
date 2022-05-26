@@ -7,23 +7,28 @@ num_classes = 9  # 9 classes because we don't include
 input_shape = (64, 64, 1)  # 64 because images are 64 x 64 pixels
 
 # Our CNN Model
-model = tf.keras.models.Sequential([
-    tf.keras.layers.experimental.preprocessing.Rescaling(1. / 255, input_shape=input_shape),
-    tf.keras.layers.Conv2D(16, (3, 3), padding='same', activation='relu'),
-    tf.keras.layers.MaxPooling2D(),
-    tf.keras.layers.Conv2D(32, (3, 3), padding='same', activation='relu'),
-    tf.keras.layers.MaxPooling2D(),
-    tf.keras.layers.Conv2D(64, (3, 3), padding='same', activation='relu'),
-    tf.keras.layers.MaxPooling2D(),
-    tf.keras.layers.Flatten(),
-    tf.keras.layers.Dense(128, activation='relu'),
-    tf.keras.layers.Dense(num_classes)
-])
+model = tf.keras.models.Sequential(
+    [
+        tf.keras.layers.experimental.preprocessing.Rescaling(
+            1.0 / 255, input_shape=input_shape
+        ),
+        tf.keras.layers.Conv2D(16, (3, 3), padding="same", activation="relu"),
+        tf.keras.layers.MaxPooling2D(),
+        tf.keras.layers.Conv2D(32, (3, 3), padding="same", activation="relu"),
+        tf.keras.layers.MaxPooling2D(),
+        tf.keras.layers.Conv2D(64, (3, 3), padding="same", activation="relu"),
+        tf.keras.layers.MaxPooling2D(),
+        tf.keras.layers.Flatten(),
+        tf.keras.layers.Dense(128, activation="relu"),
+        tf.keras.layers.Dense(num_classes),
+    ]
+)
 
 model.compile(
-    optimizer='adam',
+    optimizer="adam",
     loss=tf.losses.SparseCategoricalCrossentropy(from_logits=True),
-    metrics=['accuracy'])
+    metrics=["accuracy"],
+)
 
 # Loads the training data from our custom dataset
 train_ds = tf.keras.preprocessing.image_dataset_from_directory(
@@ -33,7 +38,7 @@ train_ds = tf.keras.preprocessing.image_dataset_from_directory(
     seed=123,
     image_size=(64, 64),
     color_mode="grayscale",
-    batch_size=32
+    batch_size=32,
 )
 
 # Loads the validation data from our custom dataset
@@ -44,7 +49,7 @@ val_ds = tf.keras.preprocessing.image_dataset_from_directory(
     seed=123,
     image_size=(64, 64),
     color_mode="grayscale",
-    batch_size=32
+    batch_size=32,
 )
 
 # Fits the model based on our custom dataset
