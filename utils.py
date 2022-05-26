@@ -197,7 +197,8 @@ def resize_number_images(images, dimension):
 
 # Gets all the numbers for the sudoku puzzle
 def get_sudoku(images, model):
-    sudoku = list()
+    sudoku = str()
+    checker = list()
     # Appends nine lists of nine numbers to the sudoku list
     for j in range(0, len(images), 9):
         sudoku_row = list()
@@ -207,11 +208,13 @@ def get_sudoku(images, model):
             if type(images[i]) is not bool:
                 prediction = model.predict(images[i])  # Predicts what the digit is using the CNN
                 prediction_value = np.argmax(prediction)
-                sudoku_row.append(prediction_value + 1)
+                sudoku += str(prediction_value + 1)
+                sudoku_row.append(str(prediction_value + 1))
             else:
-                sudoku_row.append(0)
-        sudoku.append(sudoku_row)
-    return sudoku
+                sudoku += str(0)
+                sudoku_row.append(str(0))
+        checker.append(sudoku_row)
+    return sudoku, checker
 
 
 # Overlay the solution found on the warped image
@@ -219,8 +222,8 @@ def overlay_solution(image, solved_puzzle, initial_puzzle, dimension, text_colou
     for y in range(len(solved_puzzle)):
         for x in range(len(solved_puzzle[y])):
             # Check to make sure the number wasn't already on the sudoku board
-            if initial_puzzle[y][x] == 0:
-                number = str(solved_puzzle[y][x])
+            if initial_puzzle[y][x] == "0":
+                number = solved_puzzle[y][x]
 
                 # Retrieves the corners and center of the box
                 top_left = (x * dimension, y * dimension)
